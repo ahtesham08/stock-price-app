@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Price % Difference Calculator</title>
+  <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #111827;
+      --card: rgba(255,255,255,0.08);
+      --stroke: rgba(255,255,255,0.12);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #60a5fa;
+      --green: #22c55e;
+      --red: #ef4444;
+      --shadow: 0 20px 50px rgba(0,0,0,0.35);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(34,197,94,0.12), transparent 24%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 820px;
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 28px 28px 18px;
+      border-bottom: 1px solid var(--stroke);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 6px 12px;
+      border: 1px solid rgba(96,165,250,0.25);
+      border-radius: 999px;
+      color: #bfdbfe;
+      background: rgba(96,165,250,0.1);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      line-height: 1.1;
+    }
+
+    .subtext {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+      max-width: 58ch;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      padding: 28px;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--stroke);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .inputs {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.92rem;
+      color: #cbd5e1;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .currency {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-weight: 600;
+      min-width: 22px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15,23,42,0.5);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    input {
+      padding: 15px 16px 15px 42px;
+    }
+
+    select {
+      padding: 15px 16px;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, #94a3b8 50%), linear-gradient(135deg, #94a3b8 50%, transparent 50%);
+      background-position: calc(100% - 20px) calc(50% - 3px), calc(100% - 14px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: rgba(96,165,250,0.55);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.14);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .primary {
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      color: white;
+      flex: 1;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .result-card {
+      display: grid;
+      gap: 14px;
+      height: 100%;
+      align-content: start;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .big-number {
+      font-size: clamp(2.2rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .trend {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .up {
+      background: rgba(34,197,94,0.16);
+      color: #86efac;
+      border: 1px solid rgba(34,197,94,0.2);
+    }
+
+    .down {
+      background: rgba(239,68,68,0.14);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.18);
+    }
+
+    .flat {
+      background: rgba(255,255,255,0.08);
+      color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .stat .name {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat .value {
+      font-size: 1.06rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .formula {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .footer-note {
+      padding: 0 28px 24px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 760px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="eyebrow">Mini Stock Tool</div>
+      <h1>Stock Price % Difference Calculator</h1>
+      <div class="subtext">
+        Enter the old stock price and the new stock price. Pick a currency, and the app will instantly show the percentage change, price difference, and whether the stock moved up or down.
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="panel">
+        <div class="inputs">
+          <div class="field">
+            <label for="currencySelect">Currency</label>
+            <select id="currencySelect">
+              <option value="USD">US Dollar. USD ($)</option>
+              <option value="EUR">Euro. EUR (€)</option>
+              <option value="JPY">Japanese Yen. JPY (¥)</option>
+              <option value="GBP">British Pound. GBP (£)</option>
+              <option value="CHF">Swiss Franc. CHF (CHF)</option>
+              <option value="CAD">Canadian Dollar. CAD (C$)</option>
+              <option value="AUD">Australian Dollar. AUD (A$)</option>
+              <option value="CNY">Chinese Yuan. CNY (¥)</option>
+              <option value="HKD">Hong Kong Dollar. HKD (HK$)</option>
+              <option value="INR" selected>Indian Rupee. INR (₹)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="oldPrice">Old Price</label>
+            <div class="input-wrap">
+              <span class="currency" id="oldCurrencySymbol">₹</span>
+              <input id="oldPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. ₹1250.50" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="newPrice">New Price</label>
+            <div class="input-wrap">
+              <span class="currency" id="newCurrencySymbol">₹</span>
+              <input id="newPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. ₹1399.75" />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="calculateBtn">Calculate</button>
+            <button class="secondary" id="swapBtn">Swap</button>
+            <button class="secondary" id="clearBtn">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel result-card">
+        <div class="result-label">Percentage Change</div>
+        <div class="big-number" id="percentResult">0.00%</div>
+        <div class="trend flat" id="trendBadge">No change yet</div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="name">Price Difference</div>
+            <div class="value" id="diffResult">₹0.00</div>
+          </div>
+          <div class="stat">
+            <div class="name">Absolute % Move</div>
+            <div class="value" id="absPercentResult">0.00%</div>
+          </div>
+        </div>
+
+        <div class="formula" id="formulaText">
+          Formula used. ((New Price - Old Price) / Old Price) × 100
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Tip. Positive result means the stock price increased. Negative result means it dropped.
+    </div>
+  </div>
+
+  <script>
+    const currencyMap = {
+      USD: { symbol: '$', locale: 'en-US', name: 'US Dollar' },
+      EUR: { symbol: '€', locale: 'de-DE', name: 'Euro' },
+      JPY: { symbol: '¥', locale: 'ja-JP', name: 'Japanese Yen' },
+      GBP: { symbol: '£', locale: 'en-GB', name: 'British Pound' },
+      CHF: { symbol: 'CHF', locale: 'de-CH', name: 'Swiss Franc' },
+      CAD: { symbol: 'C$', locale: 'en-CA', name: 'Canadian Dollar' },
+      AUD: { symbol: 'A$', locale: 'en-AU', name: 'Australian Dollar' },
+      CNY: { symbol: '¥', locale: 'zh-CN', name: 'Chinese Yuan' },
+      HKD: { symbol: 'HK$', locale: 'en-HK', name: 'Hong Kong Dollar' },
+      INR: { symbol: '₹', locale: 'en-IN', name: 'Indian Rupee' }
+    };
+
+    const oldPriceInput = document.getElementById('oldPrice');
+    const newPriceInput = document.getElementById('newPrice');
+    const currencySelect = document.getElementById('currencySelect');
+    const oldCurrencySymbol = document.getElementById('oldCurrencySymbol');
+    const newCurrencySymbol = document.getElementById('newCurrencySymbol');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    const percentResult = document.getElementById('percentResult');
+    const diffResult = document.getElementById('diffResult');
+    const absPercentResult = document.getElementById('absPercentResult');
+    const trendBadge = document.getElementById('trendBadge');
+    const formulaText = document.getElementById('formulaText');
+
+    function getSelectedCurrency() {
+      return currencyMap[currencySelect.value] || currencyMap.INR;
+    }
+
+    function formatCurrency(value) {
+      const { locale } = getSelectedCurrency();
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currencySelect.value,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(Number(value));
+    }
+
+    function formatPercent(value) {
+      return `${Number(value).toFixed(2)}%`;
+    }
+
+    function setTrend(type, text) {
+      trendBadge.className = `trend ${type}`;
+      trendBadge.textContent = text;
+    }
+
+    function updateCurrencyUI() {
+      const { symbol, name } = getSelectedCurrency();
+      oldCurrencySymbol.textContent = symbol;
+      newCurrencySymbol.textContent = symbol;
+      oldPriceInput.placeholder = `e.g. ${symbol}1250.50`;
+      newPriceInput.placeholder = `e.g. ${symbol}1399.75`;
+      document.title = `Stock Price % Difference Calculator. ${name}`;
+    }
+
+    function calculate() {
+      const oldPrice = parseFloat(oldPriceInput.value);
+      const newPrice = parseFloat(newPriceInput.value);
+
+      if (Number.isNaN(oldPrice) || Number.isNaN(newPrice)) {
+        percentResult.textContent = 'Enter values';
+        diffResult.textContent = formatCurrency(0);
+        absPercentResult.textContent = '0.00%';
+        setTrend('flat', 'Please fill both prices');
+        formulaText.textContent = 'Formula used. ((New Price - Old Price) / Old Price) × 100';
+        return;
+      }
+
+      if (oldPrice === 0) {
+        percentResult.textContent = 'Invalid';
+        diffResult.textContent = formatCurrency(newPrice);
+        absPercentResult.textContent = '0.00%';
+        setTrend('flat', 'Old price cannot be zero');
+        formulaText.textContent = 'Percentage change cannot be calculated because the old price is 0.';
+        return;
+      }
+
+      const difference = newPrice - oldPrice;
+      const percentChange = (difference / oldPrice) * 100;
+      const absPercent = Math.abs(percentChange);
+
+      percentResult.textContent = formatPercent(percentChange);
+      diffResult.textContent = formatCurrency(difference);
+      absPercentResult.textContent = formatPercent(absPercent);
+
+      if (difference > 0) {
+        setTrend('up', 'Price went up');
+      } else if (difference < 0) {
+        setTrend('down', 'Price went down');
+      } else {
+        setTrend('flat', 'No price change');
+      }
+
+      formulaText.textContent = `Calculated as. ((${newPrice} - ${oldPrice}) / ${oldPrice}) × 100 = ${percentChange.toFixed(2)}%`;
+    }
+
+    function clearAll() {
+      oldPriceInput.value = '';
+      newPriceInput.value = '';
+      percentResult.textContent = '0.00%';
+      diffResult.textContent = formatCurrency(0);
+      absPercentResult.textContent = '0.00%';
+      setTrend('flat', 'No change yet');
+      formulaText.textContent = 'Formula used. ((New Price - Old Price) / Old Price) × 100';
+      oldPriceInput.focus();
+    }
+
+    function swapValues() {
+      const temp = oldPriceInput.value;
+      oldPriceInput.value = newPriceInput.value;
+      newPriceInput.value = temp;
+      calculate();
+    }
+
+    calculateBtn.addEventListener('click', calculate);
+    clearBtn.addEventListener('click', clearAll);
+    swapBtn.addEventListener('click', swapValues);
+    currencySelect.addEventListener('change', () => {
+      updateCurrencyUI();
+      calculate();
+    });
+
+    oldPriceInput.addEventListener('input', calculate);
+    newPriceInput.addEventListener('input', calculate);
+
+    updateCurrencyUI();
+    clearAll();
+  </script>
+</body>
+</html>
